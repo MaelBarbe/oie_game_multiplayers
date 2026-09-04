@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jeu de l'oiepéro — Plateau imprimable</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --cellW: 198px;
+      --cellH: 152px;
+      --gap: 24px;
+      --marginX: 22px;
+      --top: 16px;
+      --boardBottom: 16px;
+    }
+    *{ box-sizing:border-box; margin:0; padding:0; }
+    body{
+      font-family:'Poppins', sans-serif;
+      background:
+        radial-gradient(ellipse at 20% 0%, #3a2e6e 0%, transparent 55%),
+        radial-gradient(ellipse at 85% 15%, #5a1e5e 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 100%, #1a1440 0%, transparent 60%),
+        linear-gradient(160deg, #14102e 0%, #1c1848 45%, #241a4a 100%);
+      color:#fff;
+      min-height:100vh;
+      padding:24px 16px 40px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+    }
+    .print-header{
+      text-align:center;
+      margin-bottom:18px;
+    }
+    .print-header h1{
+      font-weight:700;
+      font-size:32px;
+      letter-spacing:0.5px;
+      text-shadow: 0 0 22px rgba(216,150,255,0.65), 0 0 45px rgba(255,95,162,0.35);
+      line-height:1.15;
+    }
+    .print-header p{
+      margin-top:6px;
+      font-weight:500;
+      font-size:13px;
+      color:#c9bff0;
+      letter-spacing:2px;
+      text-transform:uppercase;
+    }
+    .print-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:center;
+      margin-bottom:20px;
+    }
+    .print-actions button{
+      font-family:inherit;
+      font-weight:600;
+      font-size:14px;
+      border:none;
+      border-radius:12px;
+      padding:10px 18px;
+      cursor:pointer;
+      background:linear-gradient(160deg,#ff5fa2,#e0117d);
+      color:#fff;
+      box-shadow:0 4px 14px rgba(255,95,162,0.35);
+    }
+    .print-actions button.ghost{
+      background:rgba(255,255,255,0.08);
+      border:1.5px solid rgba(255,255,255,0.25);
+      box-shadow:none;
+    }
+    #capture-root{
+      display:inline-flex;
+      flex-direction:column;
+      align-items:center;
+      padding:28px 28px 32px;
+      border-radius:24px;
+      background:
+        radial-gradient(ellipse at 20% 0%, #3a2e6e 0%, transparent 55%),
+        radial-gradient(ellipse at 85% 15%, #5a1e5e 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 100%, #1a1440 0%, transparent 60%),
+        linear-gradient(160deg, #14102e 0%, #1c1848 45%, #241a4a 100%);
+    }
+    #capture-root .capture-title{
+      text-align:center;
+      margin-bottom:16px;
+    }
+    #capture-root .capture-title h2{
+      font-size:28px;
+      font-weight:700;
+      text-shadow: 0 0 22px rgba(216,150,255,0.65);
+    }
+    #capture-root .capture-title p{
+      margin-top:4px;
+      font-size:12px;
+      color:#c9bff0;
+      letter-spacing:1.5px;
+      text-transform:uppercase;
+    }
+    #board-wrap{
+      position:relative;
+    }
+    #board{
+      position:relative;
+      transform-origin: top left;
+    }
+    #arrow-layer{
+      position:absolute;
+      left:0; top:0;
+      z-index:8;
+      pointer-events:none;
+      overflow:visible;
+    }
+    .flow-arrow-stroke{
+      fill:none; stroke:#fff; stroke-width:3.25;
+      stroke-linecap:round; stroke-linejoin:round;
+    }
+    .flow-arrow-shadow{
+      fill:none; stroke:rgba(15,10,40,0.55); stroke-width:5;
+      stroke-linecap:round; stroke-linejoin:round;
+    }
+    .cell{
+      position:absolute;
+      width:var(--cellW);
+      height:var(--cellH);
+      border-radius:16px;
+      color:#fff;
+      padding:10px 10px 12px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:flex-start;
+      text-align:center;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.35);
+      z-index:1;
+    }
+    .cell-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      width:100%;
+      flex:0 0 auto;
+    }
+    .num{
+      font-weight:700;
+      font-size:15px;
+      color:rgba(255,255,255,0.9);
+      background:rgba(0,0,0,0.28);
+      border-radius:50%;
+      width:28px; height:28px;
+      text-align:center;
+      line-height:28px;
+    }
+    .icon{ font-size:22px; line-height:1; }
+    .cell-content{
+      flex:1 1 auto;
+      width:100%;
+      min-height:0;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      gap:4px;
+      padding:0 2px;
+    }
+    .label{
+      font-weight:700;
+      font-size:16px;
+      line-height:1.15;
+      text-transform:uppercase;
+      width:100%;
+      text-align:center;
+      margin:0 auto;
+    }
+    .body{
+      font-weight:500;
+      font-size:15px;
+      line-height:1.28;
+      color:rgba(255,255,255,0.95);
+      width:100%;
+      text-align:center;
+      margin:0 auto;
+      text-wrap:balance;
+    }
+    .body.big{ font-weight:700; font-size:16px; }
+    .cat-start,.cat-victory{ background:linear-gradient(160deg,#ff5fa2,#e0117d); box-shadow:0 0 20px rgba(255,95,162,0.55),0 6px 14px rgba(0,0,0,.35);}
+    .cat-aegis{ background:linear-gradient(160deg,#e8b64f,#b8860b); box-shadow:0 0 20px rgba(232,182,79,0.5),0 6px 14px rgba(0,0,0,.35);}
+    .cat-ban{ background:linear-gradient(160deg,#ef4444,#a11212); box-shadow:0 0 20px rgba(239,68,68,0.5),0 6px 14px rgba(0,0,0,.35);}
+    .cat-duel{ background:linear-gradient(160deg,#22c55e,#0f7a37); box-shadow:0 0 20px rgba(34,197,94,0.5),0 6px 14px rgba(0,0,0,.35);}
+    .cat-paint{ background:linear-gradient(160deg,#22d3ee,#0891b2); box-shadow:0 0 20px rgba(34,211,238,0.5),0 6px 14px rgba(0,0,0,.35);}
+    .cat-lag{ background:linear-gradient(160deg,#fb923c,#c2410c); box-shadow:0 0 20px rgba(251,146,60,0.5),0 6px 14px rgba(0,0,0,.35);}
+    .cat-imitate{ background:linear-gradient(160deg,#a855f7,#6d28d9); box-shadow:0 0 20px rgba(168,85,247,0.5),0 6px 14px rgba(0,0,0,.35);}
+    .cat-normal{ background:linear-gradient(160deg,#1f1c4d,#171438); box-shadow:0 0 12px rgba(120,100,220,0.25),0 6px 14px rgba(0,0,0,.35); border:1.5px solid #38316f;}
+    .cat-letter{ background:linear-gradient(160deg,#312e81,#1e1b4b); box-shadow:0 0 16px rgba(129,140,248,0.35),0 6px 14px rgba(0,0,0,.35); border:1.5px solid #6366f1;}
+    .cat-genre{ background:linear-gradient(160deg,#be185d,#831843); box-shadow:0 0 18px rgba(244,63,94,0.4),0 6px 14px rgba(0,0,0,.35); border:1.5px solid #fb7185;}
+    .cat-race{ background:linear-gradient(160deg,#0ea5e9,#0369a1); box-shadow:0 0 18px rgba(14,165,233,0.4),0 6px 14px rgba(0,0,0,.35); border:1.5px solid #38bdf8;}
+
+    @media print{
+      body{
+        background:#14102e;
+        padding:0;
+        min-height:auto;
+      }
+      .print-actions, .print-header{ display:none !important; }
+      #capture-root{
+        padding:12px;
+        border-radius:0;
+      }
+      @page{ size: A3 landscape; margin: 8mm; }
+    }
+  </style>
+</head>
+<body>
+  <header class="print-header">
+    <h1>Jeu de l'oiepéro</h1>
+    <p>Plateau imprimable — sans logique</p>
+  </header>
+
+  <div class="print-actions">
+    <button type="button" id="btn-print">Imprimer / PDF</button>
+    <button type="button" id="btn-png" class="ghost">Télécharger PNG</button>
+  </div>
+
+  <div id="capture-root">
+    <div class="capture-title">
+      <h2>Jeu de l'oiepéro</h2>
+      <p>Spécial soirée · plateau solo / vacances</p>
+    </div>
+    <div id="board-wrap">
+      <div id="board"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script>
+(function(){
+  const BOARD_COLS = 7;
+  const BOARD_ROWS = 7;
+  const BIG_LABEL_CATS = ["start","victory","aegis","ban","duel","paint","lag","letter","genre","race","soon"];
+
+  const CELL_CONTENTS = [
+    ["start","🥂","DÉPART|La soirée commence, préparez vos verres !"],
+    ["imitate","🎭","MIME|Mime un personnage du type tiré"],
+    ["normal","⌨️","|Le dernier joueur à bouger"],
+    ["normal","🍺","|Bois 2 gorgées"],
+    ["normal","🍺","|Tous ceux qui ont un verre plus rempli que toi boivent"],
+    ["aegis","🛡️","AEGIS OF VALOR|Distribue 2 gorgées et rejoue"],
+    ["normal","😌","|Chill, rien ne se passe"],
+    ["normal","🍷","|Les filles boivent"],
+    ["genre","🔫","GENRE ALÉATOIRE|Cite 3 jeux du genre tiré"],
+    ["imitate","🎮","MIME|Mime un personnage du type tiré"],
+    ["normal","🍻","|Distribue 5 gorgées"],
+    ["normal","➡️","|Avance de 3 cases"],
+    ["ban","🚫","BAN !|En prison pour un tour et bois 3 gorgées"],
+    ["normal","🍺","|Les hommes boivent"],
+    ["duel","🏓","1V1 DUEL|Ping-pong / pétanque"],
+    ["normal","💬","|Le dernier à dire FUCK KC boit 3 gorgées"],
+    ["letter","🎮","|Cite 3 champions de LOL qui commencent par la lettre…"],
+    ["duel","⚔️","DUEL DE THÈME|"],
+    ["normal","🍺","|Bois 3 gorgées"],
+    ["normal","👉","|La personne à ta droite boit 2 gorgées"],
+    ["normal","😌","|Chill, rien ne se passe"],
+    ["aegis","🛡️","AEGIS OF VALOR|Distribue 2 gorgées et rejoue"],
+    ["normal","🍻","|Distribue 3 gorgées"],
+    ["normal","🍺","|Tout le monde boit !"],
+    ["paint","🎭","2 VÉRITÉ 1 MENSONGE|"],
+    ["ban","🚫","BAN !|En prison pour un tour et bois 3 gorgées"],
+    ["normal","🍺","|Tous ceux qui ont un verre moins rempli que toi boivent"],
+    ["duel","⚔️","DUEL DE THÈME|"],
+    ["normal","⬅️","|Recule de 3 cases"],
+    ["imitate","🦸","MIME|Mime un personnage du type tiré"],
+    ["normal","🍺","|Bois 3 gorgées"],
+    ["paint","🎭","2 VÉRITÉ 1 MENSONGE|"],
+    ["lag","🐌","LAAAAAG !|Ping catastrophique, recule à la case 24 et bois 4 gorgées"],
+    ["normal","⌨️","|Le dernier joueur à bouger"],
+    ["normal","🎤","KARAOKÉ|(10 sec) Si personne ne trouve, tu bois"],
+    ["normal","👈","|La personne à ta gauche boit 3 gorgées"],
+    ["imitate","🎭","MIME|Mime un personnage du type tiré"],
+    ["normal","👥","|Choisis un duo, buvez 8 gorgées réparties entre vous deux"],
+    ["genre","🔫","GENRE ALÉATOIRE|Cite 3 jeux du genre tiré"],
+    ["normal","🍻","|Distribue 5 gorgées"],
+    ["normal","🍺","|Bois 4 gorgées"],
+    ["aegis","🛡️","AEGIS OF VALOR|Distribue 2 gorgées et rejoue"],
+    ["normal","✂️","|Shifumi en 1, 3 gorgées pour le perdant"],
+    ["normal","🍋","|Mange une rondelle de citron — si tu réagis, tu sautes à la piscine"],
+    ["normal","🍺","|Bois 3 gorgées"],
+    ["normal","🍺","|Distribue 3 gorgées"],
+    ["letter","🎬","|Cite 3 films qui commencent par la lettre…"],
+    ["normal","🍺","|Tout le monde boit !"],
+    ["victory","🏆","VICTOIRE !|Cul sec ou fonce dans la piscine"],
+  ];
+
+  function generateSpiralPositions(rows, cols){
+    const result = [];
+    let r = 0, c = 0, dr = 0, dc = 1;
+    const seen = [];
+    for(let i = 0; i < rows; i++){
+      seen[i] = [];
+      for(let j = 0; j < cols; j++) seen[i][j] = false;
+    }
+    for(let n = 0; n < rows * cols; n++){
+      result.push([r + 1, c + 1]);
+      seen[r][c] = true;
+      const nr = r + dr;
+      const nc = c + dc;
+      if(nr < 0 || nr >= rows || nc < 0 || nc >= cols || seen[nr][nc]){
+        const ndr = dc;
+        const ndc = -dr;
+        dr = ndr;
+        dc = ndc;
+      }
+      r += dr;
+      c += dc;
+    }
+    return result;
+  }
+
+  const SPIRAL = generateSpiralPositions(BOARD_ROWS, BOARD_COLS);
+  const CELLS = SPIRAL.map(function(pos, i){
+    const content = CELL_CONTENTS[i] || ["soon","✨","|À venir"];
+    return [pos[0], pos[1], i + 1, content[0], content[1], content[2]];
+  });
+
+  const metrics = {
+    cellW: 198,
+    cellH: 152,
+    gap: 24,
+    marginX: 22,
+    topOff: 16,
+    boardBottom: 16,
+  };
+
+  function cellPos(row, col){
+    return {
+      x: metrics.marginX + (col - 1) * (metrics.cellW + metrics.gap),
+      y: metrics.topOff + (row - 1) * (metrics.cellH + metrics.gap),
+    };
+  }
+
+  function cellCenter(row, col){
+    const p = cellPos(row, col);
+    return { cx: p.x + metrics.cellW / 2, cy: p.y + metrics.cellH / 2 };
+  }
+
+  function arrowSegment(a, b){
+    const from = cellCenter(a[0], a[1]);
+    const to = cellCenter(b[0], b[1]);
+    const dx = to.cx - from.cx;
+    const dy = to.cy - from.cy;
+    const len = Math.sqrt(dx * dx + dy * dy) || 1;
+    const ux = dx / len;
+    const uy = dy / len;
+    const intoCell = 6;
+    const half = (Math.abs(dx) >= Math.abs(dy) ? metrics.cellW : metrics.cellH) / 2;
+    return {
+      x1: from.cx + ux * (half - intoCell),
+      y1: from.cy + uy * (half - intoCell),
+      x2: to.cx - ux * (half - intoCell),
+      y2: to.cy - uy * (half - intoCell),
+      ux: ux, uy: uy,
+    };
+  }
+
+  function appendArrow(svg, seg){
+    const { x1, y1, x2, y2, ux, uy } = seg;
+    const px = -uy, py = ux;
+    const headLen = 11, headSpread = 8;
+    const bx = x2 - ux * headLen;
+    const by = y2 - uy * headLen;
+    const w1x = x2 - ux * headLen + px * headSpread;
+    const w1y = y2 - uy * headLen + py * headSpread;
+    const w2x = x2 - ux * headLen - px * headSpread;
+    const w2y = y2 - uy * headLen - py * headSpread;
+    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    const shaftShadow = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    shaftShadow.setAttribute("x1", x1); shaftShadow.setAttribute("y1", y1);
+    shaftShadow.setAttribute("x2", bx); shaftShadow.setAttribute("y2", by);
+    shaftShadow.setAttribute("class", "flow-arrow-shadow");
+    g.appendChild(shaftShadow);
+    const headShadow = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+    headShadow.setAttribute("points", [w1x, w1y, x2, y2, w2x, w2y].join(" "));
+    headShadow.setAttribute("class", "flow-arrow-shadow");
+    g.appendChild(headShadow);
+    const shaft = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    shaft.setAttribute("x1", x1); shaft.setAttribute("y1", y1);
+    shaft.setAttribute("x2", bx); shaft.setAttribute("y2", by);
+    shaft.setAttribute("class", "flow-arrow-stroke");
+    g.appendChild(shaft);
+    const head = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+    head.setAttribute("points", [w1x, w1y, x2, y2, w2x, w2y].join(" "));
+    head.setAttribute("class", "flow-arrow-stroke");
+    g.appendChild(head);
+    svg.appendChild(g);
+  }
+
+  function pathDirection(a, b){
+    const dr = b[0] - a[0];
+    const dc = b[1] - a[1];
+    if(Math.abs(dc) >= Math.abs(dr)) return dc > 0 ? "right" : "left";
+    return dr > 0 ? "down" : "up";
+  }
+
+  function buildBoard(){
+    const boardEl = document.getElementById("board");
+    const boardNativeW = metrics.marginX * 2 + metrics.cellW * BOARD_COLS + metrics.gap * (BOARD_COLS - 1);
+    const boardNativeH = metrics.topOff + metrics.cellH * BOARD_ROWS + metrics.gap * (BOARD_ROWS - 1) + metrics.boardBottom;
+    boardEl.style.width = boardNativeW + "px";
+    boardEl.style.height = boardNativeH + "px";
+
+    CELLS.forEach(function(c){
+      const row = c[0], col = c[1], num = c[2], cat = c[3], icon = c[4], text = c[5];
+      const pos = cellPos(row, col);
+      const parts = String(text || "").split("|");
+      const label = parts[0] || "";
+      const body = parts[1] || "";
+      const div = document.createElement("div");
+      div.className = "cell cat-" + cat;
+      div.style.left = pos.x + "px";
+      div.style.top = pos.y + "px";
+      let fontSize = 15;
+      if(body.length > 70) fontSize = 12.5;
+      else if(body.length > 45) fontSize = 13.5;
+      const bigClass = (BIG_LABEL_CATS.indexOf(cat) !== -1 && !label) ? "big" : "";
+      div.innerHTML =
+        '<div class="cell-head"><div class="num">' + num + '</div><div class="icon">' + icon + '</div></div>' +
+        '<div class="cell-content">' +
+          (label ? '<div class="label">' + label + '</div>' : '') +
+          '<div class="body ' + bigClass + '" style="font-size:' + fontSize + 'px">' + body + '</div>' +
+        '</div>';
+      boardEl.appendChild(div);
+    });
+
+    const sorted = CELLS.slice().sort(function(a, b){ return a[2] - b[2]; });
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("id", "arrow-layer");
+    svg.setAttribute("width", String(boardNativeW));
+    svg.setAttribute("height", String(boardNativeH));
+    svg.setAttribute("viewBox", "0 0 " + boardNativeW + " " + boardNativeH);
+    svg.style.width = boardNativeW + "px";
+    svg.style.height = boardNativeH + "px";
+    if(sorted.length > 1) appendArrow(svg, arrowSegment(sorted[0], sorted[1]));
+    for(let i = 1; i < sorted.length - 1; i++){
+      if(pathDirection(sorted[i - 1], sorted[i]) === pathDirection(sorted[i], sorted[i + 1])) continue;
+      appendArrow(svg, arrowSegment(sorted[i], sorted[i + 1]));
+    }
+    boardEl.appendChild(svg);
+  }
+
+  buildBoard();
+
+  document.getElementById("btn-print").addEventListener("click", function(){
+    window.print();
+  });
+
+  document.getElementById("btn-png").addEventListener("click", function(){
+    const root = document.getElementById("capture-root");
+    const btn = document.getElementById("btn-png");
+    btn.disabled = true;
+    btn.textContent = "Génération…";
+    html2canvas(root, {
+      backgroundColor: null,
+      scale: 2,
+      useCORS: true,
+      logging: false,
+    }).then(function(canvas){
+      const link = document.createElement("a");
+      link.download = "oiepero-plateau.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+      btn.disabled = false;
+      btn.textContent = "Télécharger PNG";
+    }).catch(function(err){
+      console.error(err);
+      alert("Impossible de générer le PNG. Tu peux aussi utiliser Imprimer → Enregistrer en PDF.");
+      btn.disabled = false;
+      btn.textContent = "Télécharger PNG";
+    });
+  });
+})();
+  </script>
+</body>
+</html>

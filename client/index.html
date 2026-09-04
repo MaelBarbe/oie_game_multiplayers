@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jeu de l'oie — Spécial soirée</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;1,500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <a class="skip-link" href="#lobby-screen">Aller au contenu</a>
+
+  <h1>Jeu de l'oiepéro</h1>
+  <div class="subtitle">Multijoueur en ligne — crée une salle, partage le code, joue ensemble</div>
+
+  <main id="lobby-screen" class="lobby-screen">
+    <div id="lobby-entry" class="lobby-card">
+      <h2 class="lobby-title">Rejoindre la soirée</h2>
+      <label class="lobby-label" for="lobby-name">Pseudo</label>
+      <input type="text" id="lobby-name" class="lobby-input" maxlength="24" placeholder="Ton pseudo" autocomplete="nickname">
+      <label class="lobby-label" for="lobby-code">Code de salle</label>
+      <input type="text" id="lobby-code" class="lobby-input lobby-code-input" maxlength="6" placeholder="MAEL42" autocomplete="off" spellcheck="false">
+      <div id="lobby-error" class="lobby-error" hidden></div>
+      <div class="lobby-actions">
+        <button type="button" id="lobby-create-btn" class="lobby-btn">Créer une salle</button>
+        <button type="button" id="lobby-join-btn" class="lobby-btn ghost">Rejoindre</button>
+      </div>
+      <p class="lobby-hint">2 à 10 joueurs · tu peux aussi rejoindre une partie déjà commencée</p>
+    </div>
+
+    <div id="lobby-room" class="lobby-card lobby-room-card" hidden>
+      <div class="lobby-room-head">
+        <div>
+          <div class="lobby-label">Code de salle</div>
+          <div class="lobby-code-row">
+            <span id="lobby-room-code" class="lobby-room-code">————</span>
+            <button type="button" id="lobby-copy-btn" class="lobby-btn tiny ghost">Copier</button>
+          </div>
+        </div>
+        <div id="lobby-status" class="lobby-status">En lobby</div>
+      </div>
+
+      <div class="lobby-label">Nombre de dés (hôte)</div>
+      <div id="lobby-dice-mode" class="lobby-dice-mode" role="group" aria-label="Nombre de dés">
+        <button type="button" class="lobby-dice-btn" data-count="1">1 dé</button>
+        <button type="button" class="lobby-dice-btn active" data-count="2">2 dés</button>
+      </div>
+
+      <div class="lobby-label">Joueurs</div>
+      <div id="lobby-players" class="lobby-players"></div>
+
+      <div id="lobby-waiting" class="lobby-waiting" hidden>
+        <div id="lobby-waiting-title">Chargement de la partie…</div>
+      </div>
+
+      <div class="lobby-actions">
+        <button type="button" id="lobby-start-btn" class="lobby-btn" hidden disabled>Démarrer la partie</button>
+        <button type="button" id="lobby-leave-btn" class="lobby-btn ghost">Quitter</button>
+      </div>
+    </div>
+  </main>
+
+  <div id="game-screen" hidden>
+    <div id="your-turn-toast" class="your-turn-toast" hidden aria-live="assertive" role="status">À toi de jouer !</div>
+    <div class="layout">
+      <div id="board-wrap" role="region" aria-label="Plateau de jeu">
+        <div id="board" role="application" aria-label="Parcours du jeu de l'oie"></div>
+      </div>
+
+      <aside id="panel" aria-label="Panneau de partie">
+        <div class="game-room-bar">
+          <div>
+            <div class="lobby-label" id="game-room-label">Salle</div>
+            <div id="game-room-code" class="game-room-code" aria-labelledby="game-room-label">—</div>
+          </div>
+          <button type="button" id="game-leave-btn" class="lobby-btn tiny ghost">Quitter</button>
+        </div>
+
+        <h2 id="bench-heading">Pions</h2>
+        <div id="bench" role="list" aria-labelledby="bench-heading"></div>
+        <button type="button" id="start-btn" class="start-btn" hidden>Commencer la partie</button>
+
+        <div class="dice-box">
+          <div class="turn-bar" aria-live="polite" aria-atomic="true">
+            <span class="turn-label" id="turn-label">Tour de</span>
+            <span id="turn-swatch" class="turn-swatch" hidden aria-hidden="true"></span>
+            <span id="turn-name" class="turn-name" aria-labelledby="turn-label">—</span>
+            <button type="button" id="next-turn-btn" class="next-turn-btn" title="Passer au joueur suivant" aria-label="Passer au joueur suivant" hidden>→</button>
+          </div>
+          <div id="turn-msg" class="turn-msg" hidden role="status" aria-live="polite"></div>
+          <h2 id="dice-heading">Dés</h2>
+          <div class="dice-mode" role="group" aria-labelledby="dice-heading" aria-label="Nombre de dés">
+            <button type="button" class="dice-mode-btn" data-count="1" disabled>1 dé</button>
+            <button type="button" class="dice-mode-btn active" data-count="2" disabled>2 dés</button>
+          </div>
+          <div class="dice-row" aria-hidden="true">
+            <div class="die" id="die-1"></div>
+            <div class="die" id="die-2"></div>
+          </div>
+          <div class="dice-total" id="dice-total" role="status" aria-live="polite" aria-atomic="true">—</div>
+          <button type="button" id="roll-dice-btn">Lancer les dés</button>
+        </div>
+
+        <section class="history-box" aria-labelledby="history-heading">
+          <h2 id="history-heading">Historique</h2>
+          <ol id="turn-history" class="turn-history" aria-live="polite" aria-relevant="additions"></ol>
+        </section>
+
+        <div class="panel-heading">
+          <h2 id="players-heading">Joueurs <span id="player-count" class="player-count"></span></h2>
+          <div class="panel-heading-actions">
+            <button type="button" id="clear-players-btn" class="clear-players-btn" title="Retirer tous les joueurs" aria-label="Retirer tous les joueurs" hidden>Vider</button>
+            <button type="button" id="add-player-btn" class="add-player-btn" title="Ajouter un joueur" aria-label="Ajouter un joueur" hidden>+</button>
+          </div>
+        </div>
+        <div id="players-list" role="list" aria-labelledby="players-heading"></div>
+        <button type="button" id="reset-btn" hidden>Retirer tous les pions du plateau</button>
+        <p class="hint">Les dés et les règles sont gérés par le serveur. Seul ton tour permet de lancer. <span id="host-drag-hint" hidden>Hôte : tu peux glisser un pion pour corriger.</span></p>
+      </aside>
+    </div>
+  </div>
+
+  <div id="color-picker" class="color-picker" hidden>
+    <div id="color-picker-backdrop" class="color-picker-backdrop"></div>
+    <div class="color-picker-card" role="dialog" aria-modal="true" aria-label="Choisir une couleur">
+      <div class="color-picker-title">Choisir une couleur</div>
+      <canvas id="color-wheel" width="220" height="220"></canvas>
+      <div id="color-picker-warn" class="color-picker-warn" hidden>Couleur trop proche d'un autre joueur</div>
+      <div class="color-picker-actions">
+        <button type="button" id="color-picker-cancel" class="color-picker-btn ghost">Annuler</button>
+        <button type="button" id="color-picker-ok" class="color-picker-btn">Valider</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="confirm-modal" class="confirm-modal" hidden>
+    <div id="confirm-modal-backdrop" class="confirm-modal-backdrop"></div>
+    <div class="confirm-modal-card" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title" aria-describedby="confirm-modal-text">
+      <div class="confirm-modal-icon" aria-hidden="true">↺</div>
+      <div id="confirm-modal-title" class="confirm-modal-title">Retirer tous les pions ?</div>
+      <p id="confirm-modal-text" class="confirm-modal-text">Tous les pions retourneront sur le banc. Les positions et les BAN seront perdus.</p>
+      <div class="confirm-modal-actions">
+        <button type="button" id="confirm-modal-cancel" class="confirm-modal-btn ghost">Annuler</button>
+        <button type="button" id="confirm-modal-ok" class="confirm-modal-btn danger">Tout retirer</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="victory-modal" class="confirm-modal victory-modal" hidden>
+    <div id="victory-modal-backdrop" class="confirm-modal-backdrop"></div>
+    <div class="confirm-modal-card victory-card" role="dialog" aria-modal="true" aria-labelledby="victory-modal-title" aria-describedby="victory-modal-text">
+      <div class="confirm-modal-icon victory-icon" aria-hidden="true">🏆</div>
+      <div id="victory-modal-title" class="confirm-modal-title">Victoire !</div>
+      <p id="victory-modal-text" class="confirm-modal-text">Un joueur a gagné.</p>
+      <div class="confirm-modal-actions">
+        <button type="button" id="victory-modal-continue" class="confirm-modal-btn ghost">Continuer</button>
+        <button type="button" id="victory-modal-restart" class="confirm-modal-btn victory">Nouvelle partie</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="letter-modal" class="confirm-modal letter-modal" hidden>
+    <div id="letter-modal-backdrop" class="confirm-modal-backdrop"></div>
+    <div class="confirm-modal-card letter-card" role="dialog" aria-modal="true" aria-labelledby="letter-modal-title" aria-describedby="letter-modal-prompt">
+      <div class="confirm-modal-icon letter-icon" aria-hidden="true">🔤</div>
+      <div id="letter-modal-title" class="confirm-modal-title">Lettre aléatoire</div>
+      <p id="letter-modal-prompt" class="confirm-modal-text">Cite 3 choses qui commencent par la lettre :</p>
+      <div id="letter-display" class="letter-display">?</div>
+      <div class="confirm-modal-actions letter-actions">
+        <button type="button" id="letter-modal-roll" class="confirm-modal-btn letter-roll" hidden>Relancer</button>
+        <button type="button" id="letter-modal-ok" class="confirm-modal-btn ghost">OK — continuer</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="genre-modal" class="confirm-modal genre-modal" hidden>
+    <div id="genre-modal-backdrop" class="confirm-modal-backdrop"></div>
+    <div class="confirm-modal-card genre-card" role="dialog" aria-modal="true" aria-labelledby="genre-modal-title" aria-describedby="genre-modal-prompt">
+      <div class="confirm-modal-icon genre-icon" aria-hidden="true">🎮</div>
+      <div id="genre-modal-title" class="confirm-modal-title">Genre aléatoire</div>
+      <p id="genre-modal-prompt" class="confirm-modal-text">Cite 3 jeux du genre tiré :</p>
+      <div id="genre-display" class="genre-display" role="status" aria-live="polite">?</div>
+      <div class="confirm-modal-actions letter-actions">
+        <button type="button" id="genre-modal-roll" class="confirm-modal-btn letter-roll" hidden>Relancer</button>
+        <button type="button" id="genre-modal-ok" class="confirm-modal-btn ghost">OK — continuer</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="race-modal" class="confirm-modal race-modal" hidden>
+    <div id="race-modal-backdrop" class="confirm-modal-backdrop"></div>
+    <div class="confirm-modal-card race-card" role="dialog" aria-modal="true" aria-labelledby="race-modal-title">
+      <div class="race-header">
+        <div>
+          <div id="race-modal-title" class="confirm-modal-title">Défi chat</div>
+          <p id="race-modal-prompt" class="confirm-modal-text">Le dernier à écrire le mot-clé boit</p>
+        </div>
+        <div id="race-keyword-badge" class="race-keyword-badge">GG</div>
+      </div>
+
+      <div class="race-layout">
+        <div class="race-chat-pane">
+          <div id="race-chat-log" class="race-chat-log" aria-live="polite"></div>
+          <form id="race-chat-form" class="race-chat-form">
+            <input type="text" id="race-chat-input" class="race-chat-input" maxlength="80" placeholder="Écris ici…" autocomplete="off" spellcheck="false">
+            <button type="submit" id="race-chat-send" class="race-chat-send">Envoyer</button>
+          </form>
+        </div>
+        <aside class="race-side" aria-label="Participants">
+          <div class="race-side-title">Participants</div>
+          <ul id="race-roster" class="race-roster"></ul>
+          <div id="race-result" class="race-result" hidden></div>
+        </aside>
+      </div>
+
+      <div class="confirm-modal-actions letter-actions">
+        <button type="button" id="race-modal-force" class="confirm-modal-btn ghost" hidden>Forcer la fin</button>
+        <button type="button" id="race-modal-ok" class="confirm-modal-btn" hidden disabled>OK — continuer</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="player-form-modal" class="confirm-modal player-form-modal" hidden>
+    <div id="player-form-backdrop" class="confirm-modal-backdrop"></div>
+    <div class="confirm-modal-card player-form-card" role="dialog" aria-modal="true" aria-labelledby="player-form-title">
+      <div id="player-form-title" class="confirm-modal-title">Nouveau joueur</div>
+      <label class="player-form-label" for="player-form-name">Pseudo</label>
+      <input type="text" id="player-form-name" class="player-form-name" maxlength="24" placeholder="Nom du joueur" autocomplete="off">
+      <div class="player-form-label">Couleur</div>
+      <canvas id="player-form-wheel" width="200" height="200"></canvas>
+      <div id="player-form-warn" class="color-picker-warn" hidden>Couleur trop proche d'un autre joueur</div>
+      <div class="confirm-modal-actions">
+        <button type="button" id="player-form-cancel" class="confirm-modal-btn ghost">Annuler</button>
+        <button type="button" id="player-form-ok" class="confirm-modal-btn">Ajouter</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/socket.js"></script>
+  <script src="js/lobby.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/board.js"></script>
+  <script src="js/turns.js"></script>
+  <script src="js/tokens.js"></script>
+  <script src="js/panel.js"></script>
+  <script src="js/dice.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

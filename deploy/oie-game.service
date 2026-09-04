@@ -1,0 +1,19 @@
+[Unit]
+Description=Jeu de l'oie multijoueur
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/oie-game-multiplayers
+Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
+Environment=PORT=3000
+Environment=TRUST_PROXY=1
+# EnvironmentFile=-/opt/oie-game-multiplayers/.env
+ExecStart=/usr/bin/node server/server.js
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

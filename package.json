@@ -1,0 +1,20 @@
+{
+  "name": "oie-game-multiplayers",
+  "version": "1.0.0",
+  "description": "Jeu de l'oie multijoueur en ligne",
+  "main": "server/server.js",
+  "scripts": {
+    "dev": "node --watch server/server.js",
+    "start": "node server/server.js",
+    "test": "node scripts/test-game.js && node scripts/test-rooms.js && node scripts/test-e2e.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "private": true,
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "socket.io": "^4.8.3"
+  }
+}

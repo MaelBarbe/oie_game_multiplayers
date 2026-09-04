@@ -1,0 +1,31 @@
+# Exemple Cloudflare Tunnel (accès rapide sans VPS)
+#
+# 1. Lancer le jeu en local :
+#      npm start
+#
+# 2. Installer cloudflared :
+#      https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/installation/
+#
+# 3a. Tunnel rapide (URL aléatoire, idéal pour tester avec des amis) :
+#      cloudflared tunnel --url http://127.0.0.1:3000
+#
+# 3b. Tunnel nommé (domaine fixe, compte Cloudflare) :
+#      cloudflared tunnel login
+#      cloudflared tunnel create oie-game
+#      cloudflared tunnel route dns oie-game oie.votredomaine.com
+#
+#    Fichier ~/.cloudflared/config.yml (exemple) :
+#
+#      tunnel: <TUNNEL_ID>
+#      credentials-file: /home/USER/.cloudflared/<TUNNEL_ID>.json
+#      ingress:
+#        - hostname: oie.votredomaine.com
+#          service: http://127.0.0.1:3000
+#        - service: http_status:404
+#
+#      cloudflared tunnel run oie-game
+#
+# Notes :
+# - Les WebSockets Socket.IO passent via le tunnel sans config spéciale.
+# - Partage l'URL https://… aux joueurs (même code de salle).
+# - Le client se connecte automatiquement à l'hôte de la page (pas d'URL en dur).
